@@ -1,32 +1,58 @@
-'use strict';
+var express = require('express');
+var app = express();
 
-// call the packages we need
-var express    = require('express');        // call express
-var app        = express();                 // define our app using express
-var bodyParser = require('body-parser');
-var routes = require('./app/routes/index.js');
-var api = require('./app/api/timestamp.js');
+// enable CORS (https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
+// so that your API is remotely testable by FCC 
+var cors = require('cors');
+app.use(cors({optionsSuccessStatus: 200}));  // some legacy browsers choke on 204
 
-// configure app to use bodyParser()
-// this will let us get the data from a POST
-app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Methods", "GET");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    next();
-  });
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-app.use('/public', express.static(process.cwd() + '/public'));
-    
-var port = process.env.PORT || 8080;        // set our port
-    
-// The format follows as, alias to use for real path, also allows permission to such path.
-//app.use('/api', express.static(process.cwd() + '/app/api'));
-    
-routes(app);
-api(app);
+// http://expressjs.com/en/starter/static-files.html
+app.use(express.static('public'));
 
-app.listen(port, function() {
-    console.log('Node.js listening on port ' + port);
+// http://expressjs.com/en/starter/basic-routing.html
+app.get("/", function (req, res) {
+  res.sendFile(__dirname + '/views/index.html');
+});
+
+
+// your first API endpoint... 
+app.get("/api/hello", function (req, res) {
+  res.json({greeting: 'hello API'});
+});
+
+
+
+app.get("/api/timestamp/:dateString?", (req, res) => {
+
+  const theDate = req.params.dateString;
+  let date;
+
+  if (!theDate) {
+    date = new Date();
+  } else {
+   if (isNaN(theDate)) {
+      date = new Date(theDate);
+    } else {
+     date = new Date(parseInt(theDate)); 
+    }
+  }
+  
+
+
+  if (!date.getTime()) {
+    res.send({
+      error: date.toString()
+    })
+  } else {
+    res.send({
+      unix: date.getTime(),
+      utc: date.toUTCString()
+    })
+  }
+})
+
+
+// listen for requests :)
+var listener = app.listen(process.env.PORT, function () {
+  console.log('Your app is listening on port ' + listener.address().port);
 });
